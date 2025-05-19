@@ -169,10 +169,10 @@ if __name__ == "__main__":
         traj_files = sorted(glob.glob(f"{folder_path}/traj_*.npz"))
         return [load_npz_as_trajectory(fp) for fp in traj_files]
 
-    # sampled_env = init_pathfinding_env(map_size=30, max_step=500)
+    sampled_env = init_pathfinding_env(map_size=10, max_step=500)
     # trajs: List[Trajectory] = get_trajectories(sampled_env, n_sample=1000)
     # save_trajectory_data(trajs, 'data/궤적/map30')
-    trajs = load_all_trajectories_from_dir('data/궤적/map10')
+    trajs = load_all_trajectories_from_dir('data/궤적/map30')
     # trajs: List[Trajectory] = load_trajectory('map10.pkl') 
     # run_bc_process(trajs, model_path='map10_bc_trained_ppo_20', map_size=10)
-    run_bc_process_mlp(trajs, model_path='map30_bc_trained_ppo', map_size=10)
+    run_bc_process(trajs, model_path='map30_bc_trained_ppo', map_size=10)

@@ -43,7 +43,7 @@ def init_pathfinding_env(
         map_size=map_size,
         max_step=max_step)
     
-    env = ActionMasker(env, lambda s: env.valid_action_mask())   
+    env = ActionMasker(env, env.valid_action_mask)   
     
     try:
         check_env(env)
