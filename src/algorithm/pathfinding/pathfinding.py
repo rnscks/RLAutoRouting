@@ -127,7 +127,7 @@ class PathFinding(ABC):
     
     
     @abstractmethod
-    def search(self, grids: VoxelGrids3D) -> bool:
+    def search(self, grid: VoxelGrids3D) -> bool:
         pass    
     
     def get_path_nodes(self, grids: VoxelGrids3D) -> List[VoxelNode]:
@@ -244,18 +244,18 @@ class AStar(PathFinding):
         self.exe_time = 0.0 
         
         
-    def search(self, grids: VoxelGrids3D) -> bool:
+    def search(self, grid: VoxelGrids3D) -> bool:
         import time
         start_time = time.time()    
-        if grids.start_node == None or grids.goal_node == None:   
+        if grid.start_node == None or grid.goal_node == None:   
             raise ValueError("Start or goal node is not set")   
-        if grids == None:
+        if grid == None:
             raise ValueError("Grids is not set")    
         
         open_list: List[VoxelNode] = []  
         closed_list: set[VoxelNode] = set() 
         
-        start_node: VoxelNode = grids.start_node    
+        start_node: VoxelNode = grid.start_node    
         heapq.heappush(open_list, start_node)   
         while open_list:
             cur_node: VoxelNode  = heapq.heappop(open_list)    
@@ -265,13 +265,13 @@ class AStar(PathFinding):
                 self.exe_time = time.time() - start_time    
                 return True 
             
-            neighbors: List[VoxelNode] = self._get_neighbors(grids, cur_node)   
+            neighbors: List[VoxelNode] = self._get_neighbors(grid, cur_node)   
             for successor in neighbors:  
                 if successor in closed_list:
                     continue
                 
                 ng = cur_node.g + cur_node.center_pnt.Distance(successor.center_pnt)
-                h = successor.center_pnt.Distance(grids.goal_node.center_pnt)
+                h = successor.center_pnt.Distance(grid.goal_node.center_pnt)
                 if successor.parent == None or successor.g > ng:
                     successor.g = ng
                     successor.f = h + ng

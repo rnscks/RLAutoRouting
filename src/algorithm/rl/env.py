@@ -183,13 +183,22 @@ class PathFindingEnv(MaskableGridsEnv):
                 cable.init_brep_solid(path_pnts, diameter=4.0, thickness=0.2)
                 terminal_block_bnds: List[Bnd_Box] = [block.bnd for block in self.panel.terminal_blocks]    
                 if cable.has_collision(terminal_block_bnds) == True:
-                    reward -= 10.0
+                    reward -= 5.0
+                else:   
+                    reward += 5.0  
+                    
+                hot_zone_bnds: List[Bnd_Box] = [zone.bnd for zone in self.panel.hot_zones]
+                if cable.has_collision(hot_zone_bnds) == True:
+                    reward -= 5.0
+                else:
+                    reward += 5.0  
+                
                 min_radius: float = cable.get_min_radius()
                 safe_min_radius: float = 4.0 * 6.0
                 if min_radius > safe_min_radius:
-                    reward += 10.0
+                    reward += 5.0
                 elif min_radius < safe_min_radius:
-                    reward -= 10.0
+                    reward -= 5.0
         
         self.cur_ep_rewards[-1].append(reward)
         return self.agent.get_observation(self.cur_node), reward, terminated, False, {}

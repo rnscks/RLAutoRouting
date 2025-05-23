@@ -12,7 +12,11 @@ class PreProcessor:
         pass
     
     
-    def process(self, available_area: Bnd_Box, terminal_blocks: List[Bnd_Box], resolution: int = 10) -> VoxelGrids3D:
+    def process(self, 
+                available_area: Bnd_Box, 
+                terminal_blocks: List[Bnd_Box], 
+                hot_zones: Optional[List[Bnd_Box]] = None,  
+                resolution: int = 10) -> VoxelGrids3D:
         grids: VoxelGrids3D =  self._create_voxel_grids(available_area, resolution)    
         
         for bnd_box in terminal_blocks:
@@ -22,6 +26,14 @@ class PreProcessor:
                 if (maxx > node.center_pnt.X() > minx) and \
                     (maxy > node.center_pnt.Y() > miny):
                     node.is_obstacle = True
+        if hot_zones is not None:   
+            for bnd_box in hot_zones:
+                maxx, maxy, maxz = bnd_box.CornerMax().Coord()
+                minx, miny, minz = bnd_box.CornerMin().Coord()
+                for node in grids:
+                    if (maxx > node.center_pnt.X() > minx) and \
+                        (maxy > node.center_pnt.Y() > miny):
+                        node.is_hot_zone = True
         return grids    
     
     def _create_voxel_grids(self, available_area: Bnd_Box, resolution: int) -> VoxelGrids3D:

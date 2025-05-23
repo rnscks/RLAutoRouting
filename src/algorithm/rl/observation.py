@@ -95,10 +95,12 @@ class SensorObservation(Observation):
             if cur_node.is_obstacle:
                 node_state = 0.0
                 break
-            
             if cur_node.is_goal_node:   
                 node_state = 0.5
                 break
+            if cur_node.is_hot_zone:
+                node_state = 0.2
+                break   
         
         relative_distance: float = n_steps / self.max_sensing_range
         return relative_distance, node_state

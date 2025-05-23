@@ -56,7 +56,6 @@ class PathFindingAgent(VoxelAgent):
             SensorObservation(),
             PanelConfigObservation(),
             ActionObservation(),
-            VoxelObservation()
         ]
         if self.panel != None:
             for observation in self.observations:

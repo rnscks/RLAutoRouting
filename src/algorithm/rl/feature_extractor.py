@@ -71,17 +71,17 @@ class PathFindingFeatureExtractor(BaseFeaturesExtractor):
                 nn.LeakyReLU())
         
         self.cnn = CNN3D()  # Initialize the 3D CNN model 
-        self.final_linear = nn.Linear(128 + 128, features_dim)
+        self.final_linear = nn.Linear(32*3, features_dim)
     
     
     def forward(self, observations: Dict[str, Tensor]) -> Tensor:
-        voxel = observations['VoxelObservation']    
+        # voxel = observations['VoxelObservation']    
         sensor = observations['SensorObservation']
         action = observations['ActionObservation']
         panel_config = observations['PanelConfigObservation']
         
-        voxel = voxel.reshape(-1, 3, 30, 30, 30)
-        voxel_features = self.cnn(voxel)
+        # voxel = voxel.reshape(-1, 3, 30, 30, 30)
+        # voxel_features = self.cnn(voxel)
         
         # Extract features from each observation
         sensor_features = self.sensor_mlp(sensor)
@@ -89,7 +89,7 @@ class PathFindingFeatureExtractor(BaseFeaturesExtractor):
         panel_config_features = self.panel_config_mlp(panel_config)
         
         # Concatenate features
-        final_features = torch.cat((voxel_features, sensor_features, action_features, panel_config_features), dim=1)    
+        final_features = torch.cat((sensor_features, action_features, panel_config_features), dim=1)    
         # Pass through final linear layer
         return self.final_linear(final_features)
 

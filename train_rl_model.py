@@ -213,5 +213,5 @@ if __name__ == "__main__":
     run_maskable_learning_process(
         model_name='',
         map_size=10, 
-        total_timesteps=100_000,
+        total_timesteps=540_000,
         max_step=500)

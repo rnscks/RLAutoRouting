@@ -31,6 +31,7 @@ class Cable(Entity):
         self.color = 'blue'
         pass
         
+        
     def init_brep_solid(self, 
                         gp_pnts: List[gp_Pnt], 
                         diameter: float = 2.0, 
@@ -74,10 +75,16 @@ class Cable(Entity):
         length = GCPnts_AbscissaPoint.Length(curve)
         return length
     
-    def get_min_radius(self) -> float:
-        if self.central_curve_wire is None: 
+    def get_min_inner_radius(self) -> float:
+        inner_cable: Cable =Cable()
+        inner_cable.init_brep_solid(
+            gp_pnts=self.pnts[2:-2],
+            diameter=2.0,
+            thickness=0.2)
+        centeral_curve_wire: TopoDS_Wire = inner_cable.central_curve_wire  
+        if centeral_curve_wire is None: 
             return 1e5  
-        wire_explorer = BRepTools_WireExplorer(self.central_curve_wire) 
+        wire_explorer = BRepTools_WireExplorer(centeral_curve_wire) 
         max_curvature = 0   
         while wire_explorer.More(): 
             curve_edge = wire_explorer.Current()  
@@ -102,14 +109,54 @@ class Cable(Entity):
         try:
             min_radius = 1/max_curvature    
         except ZeroDivisionError:
-            min_radius = 1e5    
-        min_radius = min(min_radius, 1e5)
+            min_radius = 1/1e-5
+        min_radius = min(min_radius, 1/1e-5)
         return min_radius
     
-    def has_collision(self, bnd_boxes: List[Bnd_Box]) -> bool:
-        if self.central_curve_wire is None: 
+    def get_min_radius(self) -> float:
+        centeral_curve_wire: TopoDS_Wire = self.central_curve_wire  
+        if centeral_curve_wire is None: 
             return 1e5  
-        wire_explorer = BRepTools_WireExplorer(self.central_curve_wire) 
+        wire_explorer = BRepTools_WireExplorer(centeral_curve_wire) 
+        max_curvature = 0   
+        while wire_explorer.More(): 
+            curve_edge = wire_explorer.Current()  
+            
+            curve, _, _ = BRep_Tool.Curve(curve_edge) if curve_edge else None
+            delta_u = 0.01
+            
+            if not curve:   
+                raise ValueError("CableBRepModel: No valid curve found in the spline shape.")   
+            
+            u_start, u_end = curve.FirstParameter(), curve.LastParameter()
+            props = GeomLProp_CLProps(curve, 2, 1e-6)
+            
+            u = u_start
+            max_curvature = 0
+            while u <= u_end:
+                props.SetParameter(u)
+                max_curvature = max(abs(props.Curvature()), max_curvature)
+                u += delta_u
+            
+            wire_explorer.Next()
+        try:
+            min_radius = 1/max_curvature    
+        except ZeroDivisionError:
+            min_radius = 1/1e-5
+        min_radius = min(min_radius, 1/1e-5)
+        return min_radius
+    
+    def has_inner_collision(self, bnd_boxes: List[Bnd_Box]) -> bool:
+        inner_cable: Cable =Cable() 
+        inner_cable.init_brep_solid(    
+            gp_pnts=self.pnts[2:-2],
+            diameter=2.0,
+            thickness=0.2)  
+        central_curve_wire: TopoDS_Wire = inner_cable.central_curve_wire
+        
+        if central_curve_wire is None: 
+            return 1e5  
+        wire_explorer = BRepTools_WireExplorer(central_curve_wire) 
         
         while wire_explorer.More(): 
             curve_edge = wire_explorer.Current()  
@@ -135,14 +182,38 @@ class Cable(Entity):
         
         return False
     
-    def has_path_collision(self, bnd_boxes: List[Bnd_Box]) -> bool:
-        path_pnts = self.pnts[2:-2]
-        for pnt in path_pnts:
-            for bnd_box in bnd_boxes:   
-                if bnd_box.IsOut(pnt) == False:
-                    return True 
+    def has_collision(self, bnd_boxes: List[Bnd_Box]) -> bool:
+        central_curve_wire: TopoDS_Wire = self.central_curve_wire
+        
+        if central_curve_wire is None: 
+            return 1e5  
+        wire_explorer = BRepTools_WireExplorer(central_curve_wire) 
+        
+        while wire_explorer.More(): 
+            curve_edge = wire_explorer.Current()  
+            
+            curve, _, _ = BRep_Tool.Curve(curve_edge) if curve_edge else None
+            delta_u = 0.01
+            
+            if not curve:   
+                raise ValueError("CableBRepModel: No valid curve found in the spline shape.")   
+            
+            u_start, u_end = curve.FirstParameter(), curve.LastParameter()
+            props = GeomLProp_CLProps(curve, 2, 1e-6)
+            
+            u = u_start
+            while u <= u_end:
+                props.SetParameter(u)
+                coord: gp_Pnt = props.Value()
+                for bnd_box in bnd_boxes:   
+                    if bnd_box.IsOut(coord) == False:
+                        return True
+                u += delta_u
+            wire_explorer.Next()
+        
         return False
 
+    
     def _create_cable_solid(self,
                         tcol_pnt: TColgp_HArray1OfPnt,
                         tcol_vec: TColgp_HArray1OfVec,

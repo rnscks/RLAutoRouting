@@ -136,11 +136,25 @@ if __name__ == "__main__":
         cables: List[Cable] = manager.route(pathfinder=pathfinding, is_smooth=True)
         import pandas as pd 
         df = pd.DataFrame({'length': [cable.get_linear_length() for cable in cables],   
-                           'min_radius': [cable.get_min_radius() for cable in cables],
+                           'min_radius': [cable.get_min_inner_radius() for cable in cables],
                            'exe_time': manager.exe_times})  
         df.to_excel('cable_routing_result.xlsx', index=False)  
+        hot_zone_bnds = [hot_zone.bnd for hot_zone in panel.hot_zones]  
+        n_hot_zone_collision: int = 0
+        for cable in cables:    
+            if cable.has_inner_collision(hot_zone_bnds):
+                n_hot_zone_collision += 1   
+        print(f"Number of Hot Zone Collision: {n_hot_zone_collision}")  
+        n_obstacle_collision: int = 0   
+        termainal_bnds  = [terminal_block.bnd for terminal_block in panel.terminal_blocks]  
+        for cable in cables:    
+            if cable.has_inner_collision(termainal_bnds):
+                n_obstacle_collision += 1   
+        
+        print(f"Number of Obstacle Collision: {n_obstacle_collision}")
+
         avg_cable_length = sum([cable.get_linear_length() for cable in cables]) / len(cables)
-        avg_cable_min_radius = sum([cable.get_min_radius() for cable in cables]) / len(cables)
+        avg_cable_min_radius = sum([cable.get_min_inner_radius() for cable in cables]) / len(cables)
         print(f"Average Cable Length: {avg_cable_length:.2f}")  
         print(f"Average Cable Min Radius: {avg_cable_min_radius:.2f}")  
         print(f"Average Execution Time: {sum(manager.exe_times)/len(manager.exe_times):.2f}")     
@@ -149,14 +163,7 @@ if __name__ == "__main__":
         # scene.add_entity(panel)
         # scene.display()
         
-    def random_routing_example(pathfinding: PathFinding=AStar()) -> None:
-        real_panel: Panel = Panel.read_panel("data/패널_3번_관련_파일_정보.json")   
-        panel: Panel = RandomPanelGen().generate(
-            available_area=real_panel.bnd,
-            n_sections=3,
-            n_terminals=100,
-            resolution=30
-        )
+    def random_routing_example(panel: Panel, pathfinding: PathFinding=AStar()) -> None:
         # panel.init_brep_solid()
         # panel.init_voxel_grids(resolution=10)   
         
@@ -164,18 +171,44 @@ if __name__ == "__main__":
         cables: List[Cable] = manager.route(pathfinder=pathfinding, is_smooth=True)
         import pandas as pd 
         df = pd.DataFrame({'length': [cable.get_linear_length() for cable in cables],   
-                           'min_radius': [cable.get_min_radius() for cable in cables],
+                           'min_radius': [cable.get_min_inner_radius() for cable in cables],
                            'exe_time': manager.exe_times})  
         df.to_excel('cable_routing_result.xlsx', index=False)  
         avg_cable_length = sum([cable.get_linear_length() for cable in cables]) / len(cables)
-        avg_cable_min_radius = sum([cable.get_min_radius() for cable in cables]) / len(cables)
+        avg_cable_min_radius = sum([cable.get_min_inner_radius() for cable in cables]) / len(cables)
+        
+        
+        hot_zone_bnds = [hot_zone.bnd for hot_zone in panel.hot_zones]  
+        n_hot_zone_collision: int = 0
+        for cable in cables:    
+            if cable.has_inner_collision(hot_zone_bnds):
+                n_hot_zone_collision += 1   
+        print(f"Number of Hot Zone Collision: {n_hot_zone_collision}")  
+        n_obstacle_collision: int = 0   
+        termainal_bnds  = [terminal_block.bnd for terminal_block in panel.terminal_blocks]  
+        for cable in cables:    
+            if cable.has_inner_collision(termainal_bnds):
+                n_obstacle_collision += 1   
+        
+        print(f"Number of Obstacle Collision: {n_obstacle_collision}")
+
         print(f"Average Cable Length: {avg_cable_length:.2f}")  
         print(f"Average Cable Min Radius: {avg_cable_min_radius:.2f}")  
         print(f"Average Execution Time: {sum(manager.exe_times)/len(manager.exe_times):.2f}")     
     
     
-    model = MaskablePPO.load('M10_S500_l5_100.zip')
+    model = MaskablePPO.load('data/강화학습_모델/M10_S500_l0_100.zip')
     # env = init_pathfinding_env(map_size=30)
     # print(evaluate_policy(model, env, n_eval_episodes=10, deterministic=False))  
+    
+    real_panel: Panel = Panel.read_panel("data/패널_3번_관련_파일_정보.json")   
+    panel: Panel = RandomPanelGen().generate(
+        available_area=real_panel.bnd,
+        n_sections=2,
+        n_terminals=10,
+        resolution=10
+    )
+
     path_finder = RLPathFinding(model)
-    random_routing_example()
+    random_routing_example(panel, path_finder)
+    random_routing_example(panel) 

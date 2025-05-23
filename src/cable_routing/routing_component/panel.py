@@ -26,9 +26,11 @@ class Panel(Entity):
     def init_voxel_grids(self, 
                         resolution: int = 10) -> None:
         terminal_block_bnds: List[Bnd_Box] = [block.bnd for block in self.terminal_blocks]  
+        hot_zone_bnds: List[Bnd_Box] = [zone.bnd for zone in self.hot_zones]
         self.grids = PreProcessor().process(
             available_area=self.bnd, 
             terminal_blocks=terminal_block_bnds, 
+            hot_zones=hot_zone_bnds,    
             resolution=resolution)
         return
 
